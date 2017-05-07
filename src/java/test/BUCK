@@ -1,0 +1,121 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mvn_import(org = 'junit', name = 'junit', rev = '4.11', sha1 = '4e031bb61df09069aeb2bffb4019e7a5034a4ee0')
+mvn_import(org = 'org.mockito', name = 'mockito-all', rev = '1.8.2', sha1 = 'a2efac92d00941bb323e5e0010bf03ec1b381e4b')
+
+test_srcs = glob(['**/*Test.java'])
+# stupid StressTest is named wrong! remove it from the list
+stress_srcs = glob(['**/StressTest.java'])
+test_srcs = list(set(test_srcs) - set(stress_srcs))
+
+all_srcs = glob(['**/*.java'])
+
+java_library(
+    name = "java-test-support",
+    srcs = all_srcs,
+    deps = [
+        '//src/java/main:zookeeper',
+        '//src/java/main:zookeeper-support',
+        ':junit',
+        ':mockito-all',
+    ]
+)
+
+genrule(
+    name = 'init-tests',
+    srcs = ['data/'],
+    cmd = 'rm -rf $OUT/*; mkdir -p $OUT/tmp; cp -r $SRCS $OUT',
+    out = '.'
+)
+
+def create_test_set(name, srcs):
+    java_test(
+        name = name,
+        srcs = srcs,
+        fork_mode = 'per_test',
+        #resources = [ 'resources/log4j.xml' ],
+        #resources_root = 'resources',
+        deps = [
+            ':java-test-support',
+            '//src/java/main:zookeeper',
+            '//src/java/main:zookeeper-support',
+            #'//src/java/lib:zookeeper-rt-deps',
+            ':junit',
+            ':mockito-all',
+            ':init-tests',
+        ],
+        vm_args=[
+            #'-Dlog4j.configuration=file:conf/log4j.xml',
+            '-Dbuild.test.dir=buck-out/gen/src/java/test/init-tests/tmp',
+            '-Dtest.data.dir=buck-out/gen/src/java/test/init-tests/data',
+            '-Dzookeeper.log.dir=.',
+            '-Dzookeeper.log.file=zookeeper.log',
+            '-Dzookeeper.log.level=info',
+        ],
+    )
+
+create_test_set('all-java-tests', test_srcs)
+
+# the corruption test uses 10min to finish, run it concurrently on
+# different sandcastle job
+zk_corruption_test = glob(['**/ZkDatabaseCorruptionTest.java'])
+zk_observer_test = glob(['**/*Observer*Test.java'])
+zk_quorum_test = glob(['**/test/Quorum*Test.java'])
+zk_quorum_folder_test = glob(['**/quorum/*Test.java'])
+zk_long_running_test1 = glob([
+    '**/ClientHammerTest.java',
+    '**/DatadirCleanupManagerTest.java',
+    '**/RecoveryTest.java',
+    '**/ReadOnlyModeTest.java',
+    '**/CRCTest.java',
+    '**/AsyncHammerTest.java',
+    '**/NioNettySuiteHammerTest.java',
+    '**/TruncateCorruptionTest.java',
+    '**/InvalidSnapshotTest.java',
+])
+zk_long_running_test2 = glob([
+    '**/PurgeTxnTest.java',
+    '**/NioNettySuiteTest.java',
+    '**/FollowerResyncConcurrencyTest.java',
+    '**/ZxidRolloverTest.java',
+    '**/ClientTest.java',
+    '**/LoadFromLogTest.java',
+])
+
+zk_other_test = list(
+    set(test_srcs) -
+    set(zk_corruption_test) -
+    set(zk_observer_test) -
+    set(zk_quorum_test) -
+    set(zk_quorum_folder_test) -
+    set(zk_long_running_test1) -
+    set(zk_long_running_test2)
+)
+
+create_test_set('zk-corruption-test', zk_corruption_test)
+create_test_set('zk-observer-test', zk_observer_test)
+create_test_set('zk-quorum-test', zk_quorum_test)
+create_test_set('zk-quorum-folder-test', zk_quorum_folder_test)
+create_test_set(
+    'zk-long-running-test1',
+    zk_long_running_test1
+)
+create_test_set(
+    'zk-long-running-test2',
+    zk_long_running_test2
+)
+create_test_set('zk-other-test', zk_other_test)

@@ -1,0 +1,85 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mvn_deps = []
+packages = [
+    {'org': 'asm', 'name': 'asm', 'rev': '3.1', 'sha1': 'c157def142714c544bdea2e6144645702adf7097'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-comet', 'rev': '1.9.8', 'sha1': '35eb2cea7ec03b628166960cc90252cea008ccb5'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-servlet-webserver', 'rev': '1.9.8', 'sha1': 'de12cf2edfbc7fc6a2feb82e97ca16d0c0106bfa'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-framework', 'rev': '1.9.8', 'sha1': 'd8bf1adb527b34800b6d828314a12f46b9b1d065'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-grizzlet', 'rev': '1.9.8', 'sha1': '4a22f063db59aaffd9e5ea0beff7d0f280729803'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-http', 'rev': '1.9.8', 'sha1': '6d6dc647937f7b6b9d141ef1c016248e390bbe78'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-utils', 'rev': '1.9.8', 'sha1': 'fabf915b5308d6970d5f43948d12fac55b2df648'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-rcm', 'rev': '1.9.8', 'sha1': 'a5177aec70a83a327b06cf66638681f550f341ee'},
+    {'org': 'com.sun.grizzly', 'name': 'grizzly-portunif', 'rev': '1.9.8', 'sha1': '665c5b84694538771a62f1dcf1ead6c45e7c9d65'},
+    {'org': 'com.sun.jersey', 'name': 'jersey-core', 'rev': '1.1.5.1', 'sha1': '4bcff2d25ae8eff77da32807aab13c2455159c44'},
+    {'org': 'com.sun.jersey', 'name': 'jersey-client', 'rev': '1.1.5.1', 'sha1': '54143704efa05e5a933d2fcd452239eef57bd31b'},
+    {'org': 'com.sun.jersey', 'name': 'jersey-json', 'rev': '1.1.5.1', 'sha1': '35bbde2affd9365cdab3a7e63406ece4e99754ab'},
+    {'org': 'com.sun.jersey', 'name': 'jersey-server', 'rev': '1.1.5.1', 'sha1': 'c42f4599d31b336cf4d4dd592d548d1a0cfa3f86'},
+    {'org': 'javax.ws.rs', 'name': 'jsr311-api', 'rev': '1.1.1', 'sha1': '59033da2a1afd56af1ac576750a8d0b1830d59e6'},
+]
+
+packages.extend([i for i in MAVEN_PACKAGES if i['name'] in
+                 ['sl4j-api', 'slf4j12', 'junit',]])
+
+for package in packages:
+    mvn_dependency(deps=mvn_deps, **package)
+
+java_library(
+    name='rest-lib',
+    srcs=glob(['src/java/**/*.java']),
+    deps=['//src/java/main:zookeeper'] + mvn_deps,
+    visibility=['PUBLIC'],
+    )
+
+java_binary(
+    name = 'rest',
+    main_class = 'org.apache.zookeeper.server.jersey.RestMain',
+    deps = [':rest-lib'],
+    visibility = ['PUBLIC'],
+    )
+
+
+files = [
+    'BUCK',
+    'build.xml',
+    'conf',
+    'NOTICE.txt',
+    'README.txt',
+    'rest.sh',
+    'SPEC.txt',
+    'src',
+    ]
+
+copies = []
+for file in files:
+    export_file(file)
+    copies.append('cp -r $(location :{}) $OUT/'.format(file))
+
+for package in packages:
+    copies.append('cp -r $(location :{}) $OUT/lib/'.format(package['name']))
+
+genrule(
+    name='rest-dist',
+    out='rest',
+    cmd='''
+    # GENERATE LOGGRAPH SRC
+    mkdir -p $OUT/lib
+    cp $(location :rest) $OUT/zookeeper-{1}-rest.jar
+    {0}
+    '''.format('\n'.join(copies), VERSION),
+    visibility=['PUBLIC'],
+    )

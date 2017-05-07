@@ -1,0 +1,9 @@
+[maven_repositories]
+  maven = http://repo1.maven.org/maven2/
+
+[download]
+  maven_repo = http://repo1.maven.org/maven2/
+  in_build = true
+
+[buildfile]
+  includes = //BUCK_DEFS

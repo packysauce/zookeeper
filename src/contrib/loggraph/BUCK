@@ -1,0 +1,48 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mvn_deps = []
+mvn_dependency(
+    org='com.googlecode.json-simple',
+    name='json-simple',
+    rev='1.1',
+    sha1='5e303a03d04e6788dddfa3655272580ae0fc13bb',
+    deps=mvn_deps)
+
+java_library(
+    name = 'loggraph',
+    srcs = glob(['src/**/*.java']),
+    exported_deps = ['//src/java/main:zookeeper'] + mvn_deps,
+    visibility = ['PUBLIC'],
+)
+
+files = ['src', 'build.xml', 'BUCK']
+copies = []
+for file in files:
+    export_file(file)
+    copies.append('cp -r $(location :{}) $OUT/'.format(file))
+
+genrule(
+    name='loggraph-dist',
+    out='loggraph',
+    cmd='''
+    # GENERATE LOGGRAPH SRC
+    mkdir $OUT
+    cp $(location :loggraph) $OUT/zookeeper-{1}-loggraph.jar
+    {0}
+    '''.format('\n'.join(copies), VERSION),
+    visibility=['PUBLIC'],
+    )

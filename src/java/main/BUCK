@@ -1,0 +1,112 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mvn_deps = []
+
+for package in MAVEN_PACKAGES:
+    mvn_dependency(deps=mvn_deps, **package)
+
+java_library(
+    name = 'jute',
+    srcs = glob(['org/apache/jute/**/*.java']),
+    visibility = ['PUBLIC']
+)
+
+zookeeper_deps = mvn_deps
+
+zookeeper_srcs = glob(['org/apache/zookeeper/**/*.java']) + glob(['com/**/*.java'])
+
+java_library(
+    name = 'zookeeper-support',
+    exported_deps = zookeeper_deps,
+    visibility = ['PUBLIC']
+)
+
+
+java_library(
+    name = 'zookeeper',
+    srcs = zookeeper_srcs + [':generate-version-info'],
+    exported_deps = [
+        ':zookeeper-support',
+        ':jute',
+        '//src:generated-java',
+    ],
+    visibility = ['PUBLIC']
+)
+
+#
+# jute stuff
+#
+mvn_import(org='net.java.dev.javacc', name='javacc', rev='6.1.2', sha1='2cc0cc39477da416fcf7aa052c3506c0236a0ac3')
+
+jutecc_sources = [
+    'ParseException.java',
+    'RccConstants.java',
+    'Rcc.java',
+    'RccTokenManager.java',
+    'SimpleCharStream.java',
+    'Token.java',
+    'TokenMgrError.java',
+    ]
+
+for src in jutecc_sources:
+    genrule(
+        name=src,
+        cmd='cp $(location :generate-compiler)/{}'.format(src) + ' $OUT',
+        out=src,
+        )
+
+java_binary(
+    name = 'run-javacc',
+    deps = [ ':javacc' ],
+    main_class = 'javacc',
+    )
+
+genrule(
+    name = 'generate-compiler',
+    srcs = ['org/apache/jute/compiler/generated/rcc.jj'],
+    cmd = 'mkdir -p $OUT && cd $OUT && $(exe :run-javacc) $SRCS',
+    out = 'output',
+    )
+
+java_jar(
+    name = 'jutecc',
+    main_class = 'org.apache.jute.compiler.generated.Rcc',
+    srcs = [':{}'.format(i) for i in jutecc_sources] + \
+           glob(['org/apache/jute/**/*.java']),
+    deps = [ ':javacc', ':generate-compiler' ],
+    visibility = ['PUBLIC'],
+)
+
+#
+# VerGen stuff
+#
+
+java_jar(
+    name = 'vergen',
+    main_class = 'org.apache.zookeeper.version.util.VerGen',
+    srcs = [ 'org/apache/zookeeper/version/util/VerGen.java' ],
+    visibility = ['PUBLIC'],
+)
+
+genrule(
+    name='generate-version-info',
+    cmd='''
+    $(exe :vergen) {} {} "{}"
+    mv org/apache/zookeeper/version/Info.java $OUT
+    '''.format(VERSION, BUILD_REV, BUILD_TIME),
+    out='Info.java',
+    )

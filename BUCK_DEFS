@@ -1,0 +1,145 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# these are common functions and constants used across BUCK files.
+# import them by added the following to the top of the BUCK file:
+#
+
+with allow_unsafe_import():
+    from datetime import datetime
+    from subprocess import check_output
+
+BUILD_REV = check_output('git rev-parse HEAD'.split()).strip()
+BUILD_TIME = datetime.utcnow().strftime('%m/%d/%Y %H:%M GMT')
+VERSION = '3.6.0-SNAPSHOT'
+MAVEN_PACKAGES = [
+    #{'org': 'org.apache.maven', 'name': 'maven-ant-tasks', 'rev': '2.1.3'},
+    #{'org': 'org.apache.maven.wagon', 'name': 'wagon-http', 'rev': '2.4', 'sha1': },
+    {'org': 'com.puppycrawl.tools', 'name': 'checkstyle', 'rev': '6.13', 'sha1': 'c7553b69977938af6041c08dd6c0b52842cdfadd'},
+    {'org': 'commons-cli', 'name': 'commons-cli', 'rev': '1.2', 'sha1': '2bf96b7aa8b611c177d329452af1dc933e14501c'},
+    {'org': 'commons-collections', 'name': 'commons-collections', 'rev': '3.2.2', 'sha1': '8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5'},
+    {'org': 'commons-lang', 'name': 'commons-lang', 'rev': '2.6', 'sha1': '0ce1edb914c94ebc388f086c6827e8bdeec71ac2'},
+    {'org': 'io.netty', 'name': 'netty', 'rev': '3.10.5.Final', 'sha1': '9ca7d55d246092bddd29b867706e2f6c7db701a0'},
+    {'org': 'javax.servlet', 'name': 'javax.servlet-api', 'rev': '3.1.0', 'sha1': '3cd63d075497751784b2fa84be59432f4905bf7c'},
+    {'org': 'jdiff', 'name': 'jdiff', 'rev': '1.0.9', 'sha1': '1793d3db09705c21e2ce39d2692b313bb92d0e75'},
+    {'org': 'jline', 'name': 'jline', 'rev': '2.11', 'sha1': '9504d5e2da5d78237239c5226e8200ec21182040'},
+    {'org': 'junit', 'name': 'junit', 'rev': '4.12', 'sha1': '2973d150c0dc1fefe998f834810d68f278ea58ec'},
+    {'org': 'log4j', 'name': 'log4j', 'rev': '1.2.17', 'sha1': '5af35056b4d257e4b64b9e8069c0746e8b08629f'},
+    {'org': 'org.apache.rat', 'name': 'apache-rat-tasks', 'rev': '0.10', 'sha1': '70809bfe6a9fc9e32b8d9e85a1683f729764addc'},
+    {'org': 'org.codehaus.jackson', 'name': 'jackson-core-asl', 'rev': '1.9.11', 'sha1': 'e32303ef8bd18a5c9272780d49b81c95e05ddf43'},
+    {'org': 'org.codehaus.jackson', 'name': 'jackson-mapper-asl', 'rev': '1.9.11', 'sha1': '45d70862fa016993193075a1e8e32a01dcf438e8'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-http', 'rev': '9.2.18.v20160721', 'sha1': '0db9a0cb24d48a4a7856f593f782e09d29beaf64'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-io', 'rev': '9.2.18.v20160721', 'sha1': '9e2318fdf42815e78008f5942258cbf0ab9806d4'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-security', 'rev': '9.2.18.v20160721', 'sha1': '7bb2ecbf3d478524909d29af0b1afc04ea95182b'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-server', 'rev': '9.2.18.v20160721', 'sha1': '7f39210c39eaa235a9dc1e6f8c6dddff644ee5d3'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-servlet', 'rev': '9.2.18.v20160721', 'sha1': '8089e33eeed17ef28e8c65fc72447d9b8ca5c3c4'},
+    {'org': 'org.eclipse.jetty', 'name': 'jetty-util', 'rev': '9.2.18.v20160721', 'sha1': 'b304329684d004c1d258609f6ccd9a8e2a0393f1'},
+    {'org': 'org.mockito', 'name': 'mockito-all', 'rev': '1.8.2', 'sha1': 'a2efac92d00941bb323e5e0010bf03ec1b381e4b'},
+    {'org': 'org.slf4j', 'name': 'slf4j-api', 'rev': '1.7.5', 'sha1': '6b262da268f8ad9eff941b25503a9198f0a0ac93'},
+    {'org': 'org.slf4j', 'name': 'slf4j-log4j12', 'rev': '1.7.5', 'sha1': '6edffc576ce104ec769d954618764f39f0f0f10d'},
+    {'org': 'xerces', 'name': 'xerces', 'rev': '1.4.4', 'sha1': '76108fe0e4cdf74cc511b40ca257e75a4bd7a20c'},
+    ]
+
+#
+# mvn_import takes a specificate for a mvn package and creates a
+# new target with the name of the package.
+#
+def mvn_import(org, name, rev, sha1):
+    url = 'mvn:' + org + ':' + name + ':jar:' + rev
+    jarname = '{}.jar'.format(name)
+    remote_file(name=jarname, url=url, sha1=sha1)
+    prebuilt_jar(
+        name=name,
+        binary_jar=':' + jarname,
+        visibility=['PUBLIC'],
+        )
+
+def mvn_dependency(org, name, rev, sha1, deps):
+    mvn_import(org, name, rev, sha1)
+    deps.append(':' + name)
+
+#
+# make it a bit easier to build executable jar files from
+# source
+#
+def java_jar(name, main_class, srcs, resources = [], resources_root = None, deps = [], visibility = []):
+
+    libname = name + '-lib'
+
+    java_library(
+        name = libname,
+        srcs = srcs,
+        resources = resources,
+        resources_root = resources_root,
+        deps = deps,
+        visibility = visibility,
+    )
+
+    java_binary(
+        name = name,
+        main_class = main_class,
+        deps = [ ':' + libname ],
+        visibility = visibility,
+    )
+
+#
+# make a src build from generated java files
+#
+def java_gen_srcs(name, srcs, cmd, visibility = []):
+    outname = name + '.out'
+    genrule(
+        name = outname,
+        srcs = srcs,
+        cmd = cmd + ' && mkdir -p $OUT && cp -r * $OUT',
+        out = outname,
+    )
+
+    genrule(
+        name = name,
+        srcs = [ ':' + outname ],
+        cmd = 'zip -r $OUT $(location :' + outname + ')',
+        out = name + '.src.zip',
+        visibility = visibility,
+    )
+
+#
+# make a header and src targets for generated c files
+#
+def c_gen_srcs(name, basename, srcs, cmd, visibility = []):
+    outname = name + '.out'
+    genrule(
+        name = outname,
+        srcs = srcs,
+        cmd = cmd + ' && mkdir -p $OUT && cp -r * $OUT',
+        out = outname,
+    )
+    
+# good thing we only generate one header and src file!
+    genrule(
+        name = name + '.h',
+        srcs = [ ':' + outname ],
+        cmd = 'mv $SRCS/' + basename + '.h $OUT',
+        out = basename + '.h',
+        visibility = visibility,
+    )
+
+    genrule(
+        name = name + '.c',
+        srcs = [ ':' + outname ],
+        cmd = 'mv $SRCS/' + basename + '.c $OUT',
+        out = basename + '.c',
+        visibility = visibility,
+    )

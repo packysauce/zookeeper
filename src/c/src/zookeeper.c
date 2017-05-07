@@ -50,7 +50,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h> // needed for _POSIX_MONOTONIC_CLOCK
-#include "config.h"
 #else
 #include "winstdint.h"
 #endif

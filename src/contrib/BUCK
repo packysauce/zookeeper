@@ -1,0 +1,35 @@
+
+# we need listdir
+with allow_unsafe_import():
+    import os
+    from glob import glob as py_glob
+
+# having trouble building zkfuse right now
+# bunch of problems with zookeeper.h
+
+omit = ['fatjar', 'loggraph', 'rest', 'zkfuse', 'zktreeutil']
+files = py_glob('src/contrib/*')
+paths = [os.path.basename(i) for i in files
+         if os.path.isdir(i) and \
+         os.path.basename(i) not in omit]
+
+copies = []
+for i in paths:
+    export_file(i)
+    copies.append('cp -r $(location :{}) $OUT/'.format(i))
+
+genrule(
+    name='dist',
+    out='contrib',
+    cmd='''
+    # GENERATE CONTRIB-DIST
+    mkdir $OUT
+    cp -r $(location //src/contrib/fatjar:fatjar-dist) $OUT/
+    cp -r $(location //src/contrib/loggraph:loggraph-dist) $OUT/
+    cp -r $(location //src/contrib/rest:rest-dist) $OUT/
+    cp -r $(location //src/contrib/zktreeutil:zktreeutil-dist) $OUT/
+    {}
+    '''.format('\n'.join(copies)),
+    visibility=['PUBLIC'],
+    )
+

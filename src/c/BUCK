@@ -1,0 +1,78 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+
+exported_headers = subdir_glob([('include', '*.h')])
+exported_headers['zookeeper.jute.h'] = '//src:zookeeper-jute-c.h'
+
+srcs = [
+    'src/addrvec.c',
+    'src/recordio.c',
+    'src/zk_hashtable.c',
+    'src/zk_log.c',
+    'src/zookeeper.c',
+    '//src:zookeeper-jute-c.c',
+] + glob(['src/hashtable/*.c'])
+
+preproc_flags = ['-DPACKAGE_STRING="{}"'.format(VERSION)]
+
+cxx_library(
+    name='bare-zk',
+    exported_headers=exported_headers,
+    header_namespace='',
+    preprocessor_flags=preproc_flags,
+    srcs=srcs,
+    visibility=['PUBLIC'],
+    )
+
+cxx_library(
+    name = 'zk-mt',
+    exported_headers = exported_headers,
+    header_namespace = '',
+    preprocessor_flags = [
+        '-DTHREADED',
+    ] + preproc_flags,
+    compiler_flags = [ '-pthread' ],
+    exported_linker_flags = [ '-pthread' ],
+    srcs = srcs + [
+        'src/mt_adaptor.c',
+    ],
+    visibility=['PUBLIC'],
+)
+
+cxx_library(
+    name = 'zk-st',
+    exported_headers = exported_headers,
+    preprocessor_flags = preproc_flags,
+    header_namespace = '',
+    srcs = srcs + [
+        'src/st_adaptor.c',
+    ],
+    visibility=['PUBLIC'],
+)
+
+cxx_binary(
+    name = 'cli_mt',
+    srcs = [ 'src/cli.c' ],
+    deps = [ ':zk-mt' ],
+)
+
+cxx_binary(
+    name = 'cli_st',
+    srcs = [ 'src/cli.c' ],
+    deps = [ ':zk-st' ],
+)

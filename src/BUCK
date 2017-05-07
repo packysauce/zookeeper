@@ -1,0 +1,43 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# code for generating jute files
+#
+
+with allow_unsafe_import():
+    import os
+
+c_gen_srcs(
+    name = 'zookeeper-jute-c',
+    basename = 'zookeeper.jute',
+    srcs = [ 'zookeeper.jute' ],
+    cmd = '$(exe //src/java/main:jutecc) -l c zookeeper.jute',
+    visibility = ['PUBLIC']
+)
+
+java_gen_srcs(
+    name = 'zookeeper-jute-java',
+    srcs = [ 'zookeeper.jute' ],
+    cmd = '$(exe //src/java/main:jutecc) -l java zookeeper.jute',
+)
+
+java_library(
+    name = 'generated-java',
+    srcs = [ ':zookeeper-jute-java' ],
+    deps = [ '//src/java/main:jute' ],
+    visibility = ['PUBLIC']
+)

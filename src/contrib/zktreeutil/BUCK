@@ -1,0 +1,33 @@
+
+cxx_binary(
+    name='zktreeutil',
+    compiler_flags=[
+        '-I/usr/lib/libxml2',
+    ],
+    linker_flags=['-lxml2', '-llog4cxx'],
+    srcs=glob(['src/*.cc']),
+    headers=glob(['src/*.h']),
+    deps=['//src/c:zk-mt'],
+    )
+
+import os
+with allow_unsafe_import():
+    from glob import glob as py_glob
+
+files = py_glob('src/contrib/zktreeutil/*')
+
+copies = []
+for file in files:
+    name = os.path.basename(file)
+    export_file(name)
+    copies.append('cp -r $(location :{}) $OUT/'.format(name))
+
+genrule(
+    name='zktreeutil-dist',
+    out='zktreeutil',
+    cmd='''
+    mkdir -p $OUT
+    {}
+    '''.format('\n'.join(copies)),
+    visibility=['PUBLIC'],
+    )
