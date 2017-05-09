@@ -23,7 +23,7 @@ for file in files:
     copies.append('cp -r $(location :{}) $OUT/'.format(name))
 
 genrule(
-    name='zktreeutil-dist',
+    name='dist',
     out='zktreeutil',
     cmd='''
     mkdir -p $OUT

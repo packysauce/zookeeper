@@ -36,7 +36,7 @@ for file in files:
     copies.append('cp -r $(location :{}) $OUT/'.format(file))
 
 genrule(
-    name='loggraph-dist',
+    name='dist',
     out='loggraph',
     cmd='''
     # GENERATE LOGGRAPH SRC

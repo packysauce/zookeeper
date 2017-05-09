@@ -18,9 +18,6 @@
 # code for generating jute files
 #
 
-with allow_unsafe_import():
-    import os
-
 c_gen_srcs(
     name = 'zookeeper-jute-c',
     basename = 'zookeeper.jute',
@@ -41,3 +38,10 @@ java_library(
     deps = [ '//src/java/main:jute' ],
     visibility = ['PUBLIC']
 )
+
+reexport_dir(
+    name='dist',
+    out='src',
+    path='src',
+    owned=['c', 'contrib'],
+    )

@@ -13,23 +13,9 @@ paths = [os.path.basename(i) for i in files
          if os.path.isdir(i) and \
          os.path.basename(i) not in omit]
 
-copies = []
-for i in paths:
-    export_file(i)
-    copies.append('cp -r $(location :{}) $OUT/'.format(i))
-
-genrule(
+reexport_dir(
     name='dist',
+    path='src/contrib',
     out='contrib',
-    cmd='''
-    # GENERATE CONTRIB-DIST
-    mkdir $OUT
-    cp -r $(location //src/contrib/fatjar:fatjar-dist) $OUT/
-    cp -r $(location //src/contrib/loggraph:loggraph-dist) $OUT/
-    cp -r $(location //src/contrib/rest:rest-dist) $OUT/
-    cp -r $(location //src/contrib/zktreeutil:zktreeutil-dist) $OUT/
-    {}
-    '''.format('\n'.join(copies)),
-    visibility=['PUBLIC'],
+    owned=['fatjar', 'loggraph', 'rest', 'zkfuse', 'zktreeutil'],
     )
-

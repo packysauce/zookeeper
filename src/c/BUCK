@@ -76,3 +76,11 @@ cxx_binary(
     srcs = [ 'src/cli.c' ],
     deps = [ ':zk-st' ],
 )
+
+# source distribution stuff
+
+reexport_dir(
+    name='dist',
+    path='src/c',
+    out='c',
+    )

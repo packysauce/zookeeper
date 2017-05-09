@@ -12,10 +12,11 @@ java_binary(
     )
 
 copies = []
+exports = ['bin', 'conf', 'docs',
+           'LICENSE.txt', 'NOTICE.txt', 'README_packaging.txt', 'README.txt',
+           'build.xml', 'ivy.xml', 'ivysettings.xml']
 
-import os
-
-for i in ('bin', 'conf', 'docs'):
+for i in exports:
     export_file(i)
     copies.append('cp -r $(location :{}) $D/'.format(i))
 
@@ -41,7 +42,8 @@ genrule(
     cmd='''
     D="zookeeper-{version}"
     mkdir -p $D/lib
-    cp -r $(location //:dist-contrib)/* $D/
+    cp -a $(location //:dist-contrib)/* $D/
+    cp -a $(location //src:dist) $D/
     cp $(location //src/java/main:zookeeper) $D/$D.jar
     jar -xf $(location //src:generated-java)
     jar -xf $(location //src/java/main:jutecc-lib)

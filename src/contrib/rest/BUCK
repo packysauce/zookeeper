@@ -32,8 +32,8 @@ packages = [
     {'org': 'javax.ws.rs', 'name': 'jsr311-api', 'rev': '1.1.1', 'sha1': '59033da2a1afd56af1ac576750a8d0b1830d59e6'},
 ]
 
-packages.extend([i for i in MAVEN_PACKAGES if i['name'] in
-                 ['sl4j-api', 'slf4j12', 'junit',]])
+take = ['slf4j-api', 'slf4j-log4j12', 'junit']
+#packages.extend([i for i in MAVEN_PACKAGES if i['name'] in take])
 
 for package in packages:
     mvn_dependency(deps=mvn_deps, **package)
@@ -41,14 +41,17 @@ for package in packages:
 java_library(
     name='rest-lib',
     srcs=glob(['src/java/**/*.java']),
-    deps=['//src/java/main:zookeeper'] + mvn_deps,
+    deps=['//src/java/main:zookeeper'] + mvn_deps +
+        ['//src/java/main:{}'.format(i) for i in take],
     visibility=['PUBLIC'],
     )
 
 java_binary(
     name = 'rest',
     main_class = 'org.apache.zookeeper.server.jersey.RestMain',
-    deps = [':rest-lib'],
+    deps = [
+        ':rest-lib'
+    ],
     visibility = ['PUBLIC'],
     )
 
@@ -73,7 +76,7 @@ for package in packages:
     copies.append('cp -r $(location :{}) $OUT/lib/'.format(package['name']))
 
 genrule(
-    name='rest-dist',
+    name='dist',
     out='rest',
     cmd='''
     # GENERATE LOGGRAPH SRC

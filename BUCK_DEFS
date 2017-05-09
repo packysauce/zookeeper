@@ -143,3 +143,35 @@ def c_gen_srcs(name, basename, srcs, cmd, visibility = []):
         out = basename + '.c',
         visibility = visibility,
     )
+
+def reexport_dir(name=None, path=None, out=None, owned=None):
+    assert(name is not None)
+    assert(path is not None)
+    assert(out is not None)
+    if owned is None:
+        owned = []
+    from os.path import basename
+    with allow_unsafe_import():
+        from glob import glob as py_glob
+
+    files = py_glob('{}/*'.format(path))
+    copies = []
+    for i in files:
+        filename = basename(i)
+        if filename in owned: continue
+        export_file(filename)
+        copies.append('cp -a $(location :{}) $OUT/'.format(filename))
+
+    for i in owned:
+        target = '//{}/{}:dist'.format(path, i)
+        copies.append('cp -a $(location {}) $OUT/'.format(target))
+
+    genrule(
+        name=name,
+        out=out,
+        cmd='''
+        mkdir -p $OUT
+        {}
+        '''.format('\n'.join(copies)),
+        visibility=['PUBLIC'],
+        )
