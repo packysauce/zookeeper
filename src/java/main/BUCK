@@ -43,7 +43,7 @@ java_library(
         ':zookeeper-support',
         ':jute',
         '//src:generated-java',
-    ],
+    ] + mvn_deps,
     visibility = ['PUBLIC']
 )
 

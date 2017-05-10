@@ -35,20 +35,22 @@ java_library(
     ]
 )
 
-genrule(
-    name = 'init-tests',
-    srcs = ['data/'],
-    cmd = 'rm -rf $OUT/*; mkdir -p $OUT/tmp; cp -r $SRCS $OUT',
-    out = '.'
-)
+prefix = 'buck-out/gen/src/java/test/init-tests/testdir'
 
 def create_test_set(name, srcs):
+    genrule(
+        name = 'init-tests-' + name,
+        srcs = ['data/'],
+        cmd = 'rm -rf $OUT/*; mkdir -p $OUT/tmp; cp -r $SRCS $OUT',
+        out = 'testdir'
+    )
+
     java_test(
         name = name,
         srcs = srcs,
         fork_mode = 'per_test',
-        #resources = [ 'resources/log4j.xml' ],
-        #resources_root = 'resources',
+        resources = [ 'resources/log4j.xml' ],
+        resources_root = 'resources',
         deps = [
             ':java-test-support',
             '//src/java/main:zookeeper',
@@ -56,12 +58,12 @@ def create_test_set(name, srcs):
             #'//src/java/lib:zookeeper-rt-deps',
             ':junit',
             ':mockito-all',
-            ':init-tests',
+            ':init-tests-' + name,
         ],
         vm_args=[
-            #'-Dlog4j.configuration=file:conf/log4j.xml',
-            '-Dbuild.test.dir=buck-out/gen/src/java/test/init-tests/tmp',
-            '-Dtest.data.dir=buck-out/gen/src/java/test/init-tests/data',
+            '-Dlog4j.configuration=log4j.xml',
+            '-Dbuild.test.dir={}/tmp'.format(prefix),
+            '-Dtest.data.dir={}/data'.format(prefix),
             '-Dzookeeper.log.dir=.',
             '-Dzookeeper.log.file=zookeeper.log',
             '-Dzookeeper.log.level=info',
