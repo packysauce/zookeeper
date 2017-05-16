@@ -4,10 +4,7 @@ with allow_unsafe_import():
     import os
     from glob import glob as py_glob
 
-# having trouble building zkfuse right now
-# bunch of problems with zookeeper.h
-
-omit = ['fatjar', 'loggraph', 'rest', 'zkfuse', 'zktreeutil']
+omit = ['fatjar', 'loggraph', 'rest', 'zktreeutil']
 files = py_glob('src/contrib/*')
 paths = [os.path.basename(i) for i in files
          if os.path.isdir(i) and \
@@ -17,5 +14,5 @@ reexport_dir(
     name='dist',
     path='src/contrib',
     out='contrib',
-    owned=['fatjar', 'loggraph', 'rest', 'zkfuse', 'zktreeutil'],
+    owned=['fatjar', 'loggraph', 'rest', 'zktreeutil'],
     )
